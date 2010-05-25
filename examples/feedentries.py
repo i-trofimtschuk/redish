@@ -36,19 +36,19 @@ if __name__ == "__main__":
                  link="http://rss.com/example/1",
                  content="This is an example",
                  timestamp=datetime.now())
-    entry = posts.Entry(**data)
+    entry = posts.Entry(**feed1)
     entry_id = entry.save()
     assert entry_id == entry.id
 
     stored = posts.get(entry_id)
     stored.content = "Content has been changed"
     entry_id = stored.save()
-    assert stored.id == new_id)
+    #assert stored.id == new_id
     again = posts.get(entry_id)
 
     stored.delete()
 
-    feed2 = posts.create(**data)
+    feed2 = posts.create(**feed1)
 
     for post in iter(posts):
         print("(%s) %s" % (post.id, post.title))
