@@ -24,7 +24,7 @@ class Incr(Type):
         super(Incr, self).__init__(name, client)
 
     def __repr__(self):
-        return str(self.val())
+        return repr(self.val())
 
     def val(self):
         return int(self.client.get(self.name)) if self.client.get(self.name) else 0
@@ -47,7 +47,7 @@ class Object(Type):
         self.serializer = Pickler()
 
     def __repr__(self):
-        return self.val()
+        return repr(self.val())
 
     def val(self):
         if self.client.exists(self.name):
@@ -75,7 +75,7 @@ class String(Type):
         return self.client.getset(self.name, value)
 
     def __repr__(self):
-        return self.val().__repr__()
+        return repr(self.val())
 
 class List(Type):
     """A list."""
