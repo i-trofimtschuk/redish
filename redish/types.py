@@ -66,7 +66,7 @@ class String(Type):
         super(String, self).__init__(name, client)
 
     def val(self):
-        return self.client.get(self.name)
+        return self.client.get(self.name) if self.client.exists(self.name) else ''
 
     def set(self, value):
         return self.client.set(self.name, value)
@@ -75,7 +75,7 @@ class String(Type):
         return self.client.getset(self.name, value)
 
     def __repr__(self):
-        return self.val()
+        return self.val().__repr__()
 
 class List(Type):
     """A list."""
