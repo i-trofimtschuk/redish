@@ -42,6 +42,16 @@ class Client(object):
         """Return the next id for a name."""
         return types.Id(name, self.api)
 
+    def Incr(self, name, initial=None):
+        return types.Incr(name, self.api, initial=initial)
+
+    def String(self, name, initial=None):
+        return types.String(name, self.api, initial=initial)
+
+    def Object(self, name, initial=None):
+        """A pickled python object"""
+        return types.Object(name, self.api, initial=initial)
+
     def List(self, name, initial=None):
         """The list datatype.
 

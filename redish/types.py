@@ -3,7 +3,7 @@ import bisect
 
 from redis.exceptions import ResponseError
 from redish.utils import mkey
-
+from redish.serialization import Pickler
 
 class Type(object):
     """Base-class for Redis datatypes."""
@@ -17,6 +17,65 @@ def Id(name, client):
     """Return the next value for an unique id."""
     return "%s:%s" % (name, client.incr("ids:%s" % (name, )), )
 
+
+class Incr(Type):
+
+    def __init__(self, name, client, initial=None):
+        super(Incr, self).__init__(name, client)
+
+    def __repr__(self):
+        return str(self.val())
+
+    def val(self):
+        return int(self.client.get(self.name)) if self.client.get(self.name) else 0
+
+    def set(self, value):
+        return self.client.set(self.name, value)
+
+    def incr(self, value=1):
+        return self.client.incr(self.name, value)
+
+    def decr(self, value=1):
+        return self.client.decr(self.name, value)
+
+
+class Object(Type):
+    """Pickled Python objects, only to be used with Pickle serialization"""
+
+    def __init__(self, name, client, initial=None):
+        super(Object, self).__init__(name, client)
+        self.serializer = Pickler()
+
+    def __repr__(self):
+        return self.val()
+
+    def val(self):
+        if self.client.exists(self.name):
+            return self.serializer.decode(self.client.get(self.name))
+        else:
+            return None
+
+    def set(self, value):
+        return self.client.set(self.name, self.serializer.encode(value))
+
+    def getset(self, value):
+        return self.serializer.decode(self.client.getset(self.name, self.serializer.encode(value)))
+
+class String(Type):
+    def __init__(self, name, client, initial=None):
+        super(String, self).__init__(name, client)
+
+    def val(self):
+        return self.client.get(self.name)
+
+    def set(self, value):
+        return self.client.set(self.name, value)
+
+    def getset(self, value):
+        return self.client.getset(self.name, value)
+
+    def __repr__(self):
+        return self.val()
 
 class List(Type):
     """A list."""
@@ -93,6 +152,7 @@ class List(Type):
             raise ValueError("%s not in list" % value)
         return count
 
+    # These extend methods introduce non-isolation
     def extend(self, iterable):
         """Append the values in ``iterable`` to this list."""
         for value in iterable:
