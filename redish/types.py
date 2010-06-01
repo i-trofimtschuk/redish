@@ -119,7 +119,9 @@ class List(Type):
 
     def _as_list(self):
         return self.client.lrange(self.name, 0, -1)
-
+    
+    copy = _as_list
+    
     def append(self, value):
         """Add ``value`` to the end of the list."""
         return self.client.rpush(self.name, value)
@@ -190,7 +192,9 @@ class Set(Type):
 
     def _as_set(self):
         return self.client.smembers(self.name)
-
+    
+    copy = _as_set
+    
     def add(self, member):
         """Add element to set.
 
@@ -356,7 +360,9 @@ class SortedSet(Type):
 
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
-
+    
+    copy = _as_set
+    
     def items(self):
         return self.client.zrange(self.name, 0, -1, withscores=True)
 
@@ -481,6 +487,8 @@ class Dict(Type):
 
     def _as_dict(self):
         return self.client.hgetall(self.name)
+    
+    copy = _as_dict
 
 
 class Queue(Type):
@@ -735,6 +743,7 @@ class Int(Type):
     def __repr__(self):
         return repr(int(self))
 
+    copy = __int__
 
 def is_zsettable(s):
     """quick check that all values in a dict are reals"""
