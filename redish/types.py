@@ -1,5 +1,6 @@
-from Queue import Empty, Full
 import bisect
+
+from Queue import Empty, Full
 
 from redis.exceptions import ResponseError
 from redish.utils import mkey
@@ -119,9 +120,9 @@ class List(Type):
 
     def _as_list(self):
         return self.client.lrange(self.name, 0, -1)
-    
+
     copy = _as_list
-    
+
     def append(self, value):
         """Add ``value`` to the end of the list."""
         return self.client.rpush(self.name, value)
@@ -192,9 +193,9 @@ class Set(Type):
 
     def _as_set(self):
         return self.client.smembers(self.name)
-    
+
     copy = _as_set
-    
+
     def add(self, member):
         """Add element to set.
 
@@ -227,7 +228,7 @@ class Set(Type):
         """Return the union of sets as a new set.
 
         (i.e. all elements that are in either set.)
-        
+
         Operates on either redish.types.Set or __builtins__.set.
 
         """
@@ -247,7 +248,7 @@ class Set(Type):
         """Return the intersection of two sets as a new set.
 
         (i.e. all elements that are in both sets.)
-        
+
         Operates on either redish.types.Set or __builtins__.set.
 
         """
@@ -259,13 +260,12 @@ class Set(Type):
     def intersection_update(self, other):
         """Update the set with the intersection of itself and another."""
         return self.client.sinterstore(self.name, [self.name, other.name])
-        
 
     def difference(self, *others):
         """Return the difference of two or more sets as a new :class:`set`.
 
         (i.e. all elements that are in this set but not the others.)
-        
+
         Operates on either redish.types.Set or __builtins__.set.
 
         """
@@ -288,6 +288,36 @@ class SortedSet(Type):
       must be an iterable of ``(element, score)`` tuples.
 
     """
+
+    class _itemsview(object):
+
+        def __init__(self, zset, start=0, end=-1, desc=False,
+                withscores=False):
+            self.zset = zset
+            self.start = start
+            self.end = end
+            self.desc = desc
+            self.withscores = withscores
+
+        def _items(self, start, end, desc, withscores):
+            return self.zset.items(start, end, desc=desc,
+                                   withscores=withscores)
+
+        def __iter__(self):
+            return iter(self._items(self.start, self.end, self.desc,
+                                    self.withscores))
+
+        def __reversed__(self):
+            return self._items(self.start, self.end, True, self.withscores)
+
+        def __getitem__(self, s):
+            if isinstance(s, slice):
+                i = s.start or 0
+                j = s.stop or -1
+                j = j - 1
+                return self._items(i, j, False, self.withscores)
+            else:
+                return self._items(s, s, False, self.withscores)[0]
 
     def __init__(self, name, client, initial=None):
         super(SortedSet, self).__init__(name, client)
@@ -349,10 +379,11 @@ class SortedSet(Type):
         """Return the score associated with the specified member."""
         return self.client.zscore(self.name, member)
 
-    def range_by_score(self, min, max):
+    def range_by_score(self, min, max, num=None, withscores=False):
         """Return all the elements with score >= min and score <= max
         (a range query) from the sorted set."""
-        return self.client.zrangebyscore(self.name, min, max)
+        return self.client.zrangebyscore(self.name, min, max, num=num,
+                                         withscores=withscores)
 
     def update(self, iterable):
         for member, score in iterable:
@@ -360,11 +391,18 @@ class SortedSet(Type):
 
     def _as_set(self):
         return self.client.zrange(self.name, 0, -1)
-    
+
+    def items(self, start=0, end=-1, desc=False, withscores=False):
+        return self.client.zrange(self.name, start, end,
+                                  desc=desc, withscores=withscores)
+
+    def itemsview(self, start=0, end=-1, desc=False):
+        return self._itemsview(self, start, end, desc, withscores=True)
+
+    def keysview(self, start=0, end=-1, desc=False):
+        return self._itemsview(self, start, end, desc, withscores=False)
+
     copy = _as_set
-    
-    def items(self):
-        return self.client.zrange(self.name, 0, -1, withscores=True)
 
 
 class Dict(Type):
@@ -487,7 +525,7 @@ class Dict(Type):
 
     def _as_dict(self):
         return self.client.hgetall(self.name)
-    
+
     copy = _as_dict
 
 
