@@ -13,6 +13,15 @@ class Type(object):
         self.name = mkey(name)
         self.client = client
 
+    def expire(self, time):
+        return self.client.expire(self.name, time)
+
+    def expireat(self, when):
+        return self.client.expireat(self.name, when)
+
+    def ttl(self):
+        return self.client.ttl(self.name)
+
 
 def Id(name, client):
     """Return the next value for an unique id."""
@@ -849,7 +858,7 @@ class ZSet(object):
         """Return all the elements with score >= min and score <= max
         (a range query) from the sorted set."""
         data = self.items()
-        keys = [r[1] for r in data] 
+        keys = [r[1] for r in data]
         start = bisect.bisect_left(keys, min)
         end = bisect.bisect_right(keys, max, start)
         return self._as_set()[start:end]

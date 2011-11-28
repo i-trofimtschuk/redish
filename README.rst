@@ -2,7 +2,7 @@
 redish - Pythonic Redis abstraction built on top of redis-py
 ============================================================================
 
-:Version: 0.2.0
+:Version: 0.2.1
 
 Introduction
 ============
@@ -151,6 +151,24 @@ Get the number of keys present in the database::
 
     >>> len(db)
     1
+
+Managing expiration::
+
+    >>> db["foo"] = 123
+    >>> db["foo"].expire(10)
+    >>> db["foo"].tll()
+    10L
+
+    >>> db["foo"].expireat(1355314332)
+    True
+    >>> db["foo"].ttl()
+    32810781L
+
+    >>> db["foo"].expireat(1321009871)
+    True
+    >>> db["foo"].ttl() == None
+    True
+
 
 Lists
 =====
@@ -555,7 +573,7 @@ product of operations on the underlying store::
     >>> len(r['newlist'])
     2
 
-Finally, you may structure key names into arbitrary "keyspaces" 
+Finally, you may structure key names into arbitrary "keyspaces"
 denoted by format strings::
 
     >>> name = r.keyspace['user:%04d:name']
